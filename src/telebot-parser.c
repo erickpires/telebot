@@ -119,7 +119,7 @@ telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
     cb_query->id = (char*) malloc(id_len + 1);
 
     const char* tmp_id = json_object_get_string(id);
-    strncpy(cb_query->id, tmp_id, id_len);
+    strncpy(cb_query->id, tmp_id, id_len + 1);
     json_object_put(id);
 
 
@@ -157,7 +157,7 @@ telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
 
         const char* tmp_inline_message_id = json_object_get_string(inline_message_id);
         strncpy(cb_query->inline_message_id, tmp_inline_message_id,
-                inline_message_id_len);
+                inline_message_id_len + 1);
         json_object_put(inline_message_id);
     }
 
@@ -171,7 +171,7 @@ telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
         cb_query->chat_instance = (char*) malloc(chat_instance_len + 1);
 
         const char* tmp_chat_instance = json_object_get_string(chat_instance);
-        strncpy(cb_query->chat_instance, tmp_chat_instance, chat_instance_len);
+        strncpy(cb_query->chat_instance, tmp_chat_instance, chat_instance_len + 1);
         json_object_put(chat_instance);
     }
 
@@ -185,7 +185,7 @@ telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
         cb_query->data = (char*) malloc(data_len + 1);
 
         const char* tmp_data = json_object_get_string(data);
-        strncpy(cb_query->data, tmp_data, data_len);
+        strncpy(cb_query->data, tmp_data, data_len + 1);
         json_object_put(data);
     }
 
@@ -199,7 +199,7 @@ telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
         cb_query->game_short_name = (char*) malloc(game_short_name_len + 1);
 
         const char* tmp_game_short_name = json_object_get_string(game_short_name);
-        strncpy(cb_query->game_short_name, tmp_game_short_name, game_short_name_len);
+        strncpy(cb_query->game_short_name, tmp_game_short_name, game_short_name_len + 1);
         json_object_put(game_short_name);
     }
 
