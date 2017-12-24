@@ -30,6 +30,7 @@
 #include <telebot-core-api.h>
 #include <telebot-api.h>
 #include <telebot-parser.h>
+#include <assert.h>
 
 static telebot_update_cb_f g_update_cb;
 static telebot_core_h *g_handler;
@@ -599,8 +600,8 @@ telebot_error_e telebot_send_chat_action(char *chat_id, char *action)
     return ret;
 }
 
-telebot_reply_keyboard create_reply_keyboard(bool resize, bool one_time, bool selective) {
-    telebot_reply_keyboard result;
+telebot_keyboard create_reply_keyboard(bool resize, bool one_time, bool selective) {
+    telebot_keyboard result;
     result.keyboard_obj = json_object_new_object();
     result.rows = json_object_new_array();
     result.current_row = json_object_new_array();
@@ -621,20 +622,32 @@ telebot_reply_keyboard create_reply_keyboard(bool resize, bool one_time, bool se
                                json_object_new_boolean(true));
     }
 
+    return result;
+}
+
+telebot_keyboard create_inline_keyboard() {
+    telebot_keyboard result;
+    result.keyboard_obj = json_object_new_object();
+    result.rows = json_object_new_array();
+    result.current_row = json_object_new_array();
+
+    json_object_array_add(result.rows, result.current_row);
+    json_object_object_add(result.keyboard_obj, "inline_keyboard", result.rows);
 
     return result;
 }
 
-void destroy_telebot_reply_keyboard(telebot_reply_keyboard* keyboard) {
+
+void destroy_telebot_keyboard(telebot_keyboard* keyboard) {
     json_object_put(keyboard->keyboard_obj);
 }
 
-void telebot_reply_keyboard_add_row(telebot_reply_keyboard* keyboard) {
+void telebot_keyboard_add_row(telebot_keyboard* keyboard) {
     keyboard->current_row = json_object_new_array();
     json_object_array_add(keyboard->rows, keyboard->current_row);
 }
 
-void telebot_reply_keyboard_add_button(telebot_reply_keyboard* keyboard, char* text,
+void telebot_keyboard_add_reply_button(telebot_keyboard* keyboard, char* text,
                                        bool request_contact, bool request_location) {
     if(!request_contact && !request_location) {
         json_object_array_add(keyboard->current_row,
@@ -651,13 +664,53 @@ void telebot_reply_keyboard_add_button(telebot_reply_keyboard* keyboard, char* t
             json_object_object_add(button, "request_location",
                                    json_object_new_boolean(true));
         }
+
         json_object_array_add(keyboard->current_row, button);
     }
 
 }
 
-const char* reply_keyboard_string(telebot_reply_keyboard* keyboard) {
+void telebot_keyboard_add_inline_button(telebot_keyboard* keyboard, char* text,
+                                        char* url,
+                                        char* callback_data,
+                                        char* switch_inline_query,
+                                        char* switch_inline_query_current_chat,
+                                        bool pay) {
+
+    json_object* button = json_object_new_object();
+    json_object_object_add(button, "text",
+                           json_object_new_string(text));
+    if(url) {
+        json_object_object_add(button, "url",
+                               json_object_new_string(url));
+    }
+    if(callback_data) {
+        size_t len = strlen(callback_data);
+        assert(len >= 1 && len <= 64);
+
+        json_object_object_add(button, "callback_data",
+                               json_object_new_string(callback_data));
+    }
+    if(switch_inline_query) {
+        json_object_object_add(button, "switch_inline_query",
+                               json_object_new_string(switch_inline_query));
+    }
+    if(switch_inline_query_current_chat) {
+        json_object_object_add(button, "switch_inline_query_current_chat",
+                               json_object_new_string(switch_inline_query_current_chat));
+    }
+    if(pay) {
+        json_object_object_add(button, "pay",
+                               json_object_new_boolean(true));
+    }
+
+    json_object_array_add(keyboard->current_row, button);
+}
+
+
+const char* keyboard_string(telebot_keyboard* keyboard) {
     const char* result = json_object_to_json_string_ext(keyboard->keyboard_obj,
+                                                        JSON_C_TO_STRING_PLAIN);
 
     return result;
 }
