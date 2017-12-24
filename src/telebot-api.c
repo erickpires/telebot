@@ -391,6 +391,47 @@ telebot_error_e telebot_send_message(int chat_id, char *text, char *parse_mode,
     return ret;
 }
 
+telebot_error_e telebot_delete_message(int chat_id, int message_id)
+{
+    if (g_handler == NULL)
+        return TELEBOT_ERROR_NOT_SUPPORTED;
+
+    telebot_error_e ret = telebot_core_delete_message(g_handler, chat_id, message_id);
+
+    if (g_handler->resp_data) {
+        free(g_handler->resp_data);
+        g_handler->resp_data = NULL;
+        g_handler->resp_size = 0;
+    }
+
+    return ret;
+}
+
+telebot_error_e telebot_answer_callback_query(const char *callback_query_id, char *text,
+                                              bool show_alert, char *url,
+                                              int cache_time)
+{
+    if (g_handler == NULL)
+        return TELEBOT_ERROR_NOT_SUPPORTED;
+
+    if (callback_query_id == NULL)
+        return TELEBOT_ERROR_INVALID_PARAMETER;
+
+    telebot_error_e ret = telebot_core_answer_callback_query(g_handler,
+                                                             callback_query_id, text,
+                                                             show_alert, url,
+                                                             cache_time);
+
+    if (g_handler->resp_data) {
+        free(g_handler->resp_data);
+        g_handler->resp_data = NULL;
+        g_handler->resp_size = 0;
+    }
+
+    return ret;
+}
+
+
 telebot_error_e telebot_forward_message(char *chat_id, char *from_chat_id,
         int message_id)
 {

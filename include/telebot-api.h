@@ -538,6 +538,36 @@ telebot_error_e telebot_send_message(int chat_id, char *text, char *parse_mode,
         bool disable_web_page_preview, int reply_to_message_id, const char *reply_markup);
 
 /**
+ * @brief This function is used to delete messages.
+ * @param chat_id Unique identifier for the target chat or username of the
+ * target channel (in the format \@channelusername).
+ * @param message_id Identifier of the message to delete
+ * @return on Success, TELEBOT_ERROR_NONE is returned.
+ */
+telebot_error_e telebot_delete_message(int chat_id, int message_id);
+
+/**
+ * @brief Use this method to send answers to callback queries sent from
+ * inline keyboards. The answer will be displayed to the user as a notification
+ * at the top of the chat screen or as an alert.
+ * @param callback_query_id Unique identifier for the query to be answered.
+ * @param text Optional (i.e. can be NULL). Text of the notification. If not
+ * specified, nothing will be shown to the user, 0-200 characters.
+ * @param show_alert Optional (i.e. can be NULL). If true, an alert will be
+ * shown by the client instead of a notification at the top of the chat screen.
+ * @param url Optional (i.e. can be NULL). URL that will be opened by the user's
+ *  client. If you have created a Game and accepted the conditions via @Botfather,
+ * specify the URL that opens your game – note that this will only work if the
+ * query comes from a callback_game button.
+ * @param cache_time Optional (i.e. can be NULL). The maximum amount of time in
+ * seconds that the result of the callback query may be cached client-side.
+ * Telegram apps will support caching starting in version 3.14.
+ * @return on Success, TELEBOT_ERROR_NONE is returned.
+ */
+telebot_error_e telebot_answer_callback_query(const char *callback_query_id, char *text,
+                                              bool show_alert, char *url,
+                                              int cache_time);
+/**
  * @brief This function is used to forward messages of any kind.
  * @param chat_id Unique identifier for the target chat or username of the
  * target channel (in the format \@channelusername).

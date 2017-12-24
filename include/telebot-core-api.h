@@ -161,6 +161,13 @@ telebot_error_e telebot_core_send_message(telebot_core_h *handler, char *chat_id
         char *text, char *parse_mode, bool disable_web_page_preview,
         int reply_to_message_id, const char *reply_markup);
 
+telebot_error_e telebot_core_delete_message(telebot_core_h *handler,
+                                            int chat_id, int message_id);
+telebot_error_e telebot_core_answer_callback_query(telebot_core_h * handler,
+                                                   const char *callback_query_id,
+                                                   char *text, bool show_alert,
+                                                   char *url, int cache_time);
+
 /**
  * @brief This function is used to forward messages of any kind.
  * @param handler The telebot handler created with telebot_core_create().
