@@ -810,6 +810,11 @@ void telebot_keyboard_add_row(telebot_keyboard* keyboard);
  * @return the string representation of the JSON object.
  */
 const char* keyboard_string(telebot_keyboard* keyboard);
+
+/**
+ * @brief A macro used to remove a reply keyboard.
+ */
+#define remove_keyboard_markup() "{\"remove_keyboard\":true}"
 /**
  * @} // end of APIs
  */
