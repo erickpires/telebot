@@ -133,7 +133,8 @@ static void *telebot_polling_thread(void *data)
             continue;
 
         for (index = 0;index < count; index++) {
-            g_update_cb((const telebot_message_t *)&(updates[index].message));
+            g_update_cb(&(updates[index]));
+
         }
 
         free(updates);
@@ -262,12 +263,14 @@ telebot_error_e telebot_get_updates(telebot_update_t **updates, int *count)
     if (ret != TELEBOT_ERROR_NONE)
         return ret;
 
+
     int index, cnt = *count;
     telebot_update_t *ups = *updates;
     for (index = 0;index < cnt; index++) {
         if (ups[index].update_id >= g_handler->offset)
             g_handler->offset = ups[index].update_id + 1;
     }
+
 
     return TELEBOT_ERROR_NONE;
 }

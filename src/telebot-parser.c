@@ -46,32 +46,48 @@ telebot_error_e telebot_parser_get_updates(struct json_object *obj,
     if (!array_len)
         return TELEBOT_ERROR_OPERATION_FAILED;
 
-    telebot_update_t *tmp = calloc(array_len, sizeof(telebot_update_t));
-    if (tmp == NULL)
+    // TODO(erick): We can implement a linear allocator to handle this memory.
+    telebot_update_t *result = calloc(array_len, sizeof(telebot_update_t));
+    if (result == NULL)
         return TELEBOT_ERROR_OUT_OF_MEMORY;
 
     *count = array_len;
-    *updates = tmp;
+    *updates = result;
 
     int index;
-    for (index=0;index<array_len;index++) {
+    for (index=0; index < array_len; index++) {
         struct json_object *item = json_object_array_get_idx(array, index);
 
-        memset(&(tmp[index].message), 0, sizeof(telebot_message_t));
-        tmp[index].update_id = 0;
+        // NOTE(erick): Memory is allocated with calloc, the 'message'
+        // is already zero.
+        // memset(&(tmp[index].message), 0, sizeof(telebot_message_t));
+        // tmp[index].update_id = 0;
 
         struct json_object *update_id;
         if (json_object_object_get_ex(item, "update_id", &update_id)) {
-            tmp[index].update_id = json_object_get_int(update_id);
+            result[index].update_id = json_object_get_int(update_id);
             json_object_put(update_id);
         }
 
         struct json_object *message;
         if (json_object_object_get_ex(item, "message", &message)) {
-            if (telebot_parser_get_message(message, &(tmp[index].message)) !=
+            if (telebot_parser_get_message(message, &(result[index].message)) !=
                     TELEBOT_ERROR_NONE)
                 ERR("Failed to parse message of bot update");
+
+            result[index].update_type = UPDATE_TYPE_MESSAGE;
             json_object_put(message);
+        }
+
+        struct json_object *callback_query;
+        if (json_object_object_get_ex(item, "callback_query", &callback_query)) {
+            if (telebot_parser_get_callback_query(callback_query,
+                                                  &(result[index].callback_query)) !=
+                    TELEBOT_ERROR_NONE)
+                ERR("Failed to parse callback query of bot update");
+
+            result[index].update_type = UPDATE_TYPE_CALLBACK_QUERY;
+            json_object_put(callback_query);
         }
 
         json_object_put(item);
@@ -80,15 +96,126 @@ telebot_error_e telebot_parser_get_updates(struct json_object *obj,
     return TELEBOT_ERROR_NONE;
 }
 
+
+telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
+                                                  telebot_callback_query_t *cb_query)
+{
+    int ret;
+    if (obj == NULL)
+        return TELEBOT_ERROR_INVALID_PARAMETER;
+
+    if (cb_query == NULL)
+        return TELEBOT_ERROR_INVALID_PARAMETER;
+
+    struct json_object *id;
+    if (!json_object_object_get_ex(obj, "id", &id)) {
+        ERR("Failed to get <id> from callback_query object");
+        return TELEBOT_ERROR_OPERATION_FAILED;
+    }
+    int id_len = json_object_get_string_len(id);
+
+    //TODO(erick): This memory should be allocated with a linear allocator.
+    // We will leak for now.
+    cb_query->id = (char*) malloc(id_len + 1);
+
+    const char* tmp_id = json_object_get_string(id);
+    strncpy(cb_query->id, tmp_id, id_len);
+    json_object_put(id);
+
+
+    struct json_object *from;
+    if (!json_object_object_get_ex(obj, "from", &from)) {
+        ERR("Failed to get <from> from callback_query object");
+        return TELEBOT_ERROR_OPERATION_FAILED;
+    }
+    ret = telebot_parser_get_user(from , &(cb_query->from));
+    json_object_put(from);
+
+    if (ret != TELEBOT_ERROR_NONE) {
+        ERR("Failed to get <from> from callback_query object");
+        return TELEBOT_ERROR_OPERATION_FAILED;
+    }
+
+
+    struct json_object *message;
+    if (json_object_object_get_ex(obj, "message", &message)) {
+        ret = telebot_parser_get_message(message, &(cb_query->message));
+        if (ret != TELEBOT_ERROR_NONE) {
+            ERR("Failed to get <message> from callback_query object");
+        }
+        json_object_put(message);
+    }
+
+
+    struct json_object *inline_message_id;
+    if (json_object_object_get_ex(obj, "inline_message_id", &inline_message_id)) {
+        int inline_message_id_len = json_object_get_string_len(inline_message_id);
+
+        //TODO(erick): This memory should be allocated with a linear allocator.
+        // We will leak for now.
+        cb_query->inline_message_id = (char*) malloc(inline_message_id_len + 1);
+
+        const char* tmp_inline_message_id = json_object_get_string(inline_message_id);
+        strncpy(cb_query->inline_message_id, tmp_inline_message_id,
+                inline_message_id_len);
+        json_object_put(inline_message_id);
+    }
+
+
+    struct json_object *chat_instance;
+    if (json_object_object_get_ex(obj, "chat_instance", &chat_instance)) {
+        int chat_instance_len = json_object_get_string_len(chat_instance);
+
+        //TODO(erick): This memory should be allocated with a linear allocator.
+        // We will leak for now.
+        cb_query->chat_instance = (char*) malloc(chat_instance_len + 1);
+
+        const char* tmp_chat_instance = json_object_get_string(chat_instance);
+        strncpy(cb_query->chat_instance, tmp_chat_instance, chat_instance_len);
+        json_object_put(chat_instance);
+    }
+
+
+    struct json_object *data;
+    if (json_object_object_get_ex(obj, "data", &data)) {
+        int data_len = json_object_get_string_len(data);
+
+        //TODO(erick): This memory should be allocated with a linear allocator.
+        // We will leak for now.
+        cb_query->data = (char*) malloc(data_len + 1);
+
+        const char* tmp_data = json_object_get_string(data);
+        strncpy(cb_query->data, tmp_data, data_len);
+        json_object_put(data);
+    }
+
+
+    struct json_object *game_short_name;
+    if (json_object_object_get_ex(obj, "game_short_name", &game_short_name)) {
+        int game_short_name_len = json_object_get_string_len(game_short_name);
+
+        //TODO(erick): This memory should be allocated with a linear allocator.
+        // We will leak for now.
+        cb_query->game_short_name = (char*) malloc(game_short_name_len + 1);
+
+        const char* tmp_game_short_name = json_object_get_string(game_short_name);
+        strncpy(cb_query->game_short_name, tmp_game_short_name, game_short_name_len);
+        json_object_put(game_short_name);
+    }
+
+    return TELEBOT_ERROR_NONE;
+}
+
 telebot_error_e telebot_parser_get_message(struct json_object *obj,
-        telebot_message_t *msg)
+                                           telebot_message_t *msg)
 {
     if (obj == NULL)
         return TELEBOT_ERROR_INVALID_PARAMETER;
 
     if (msg == NULL)
         return TELEBOT_ERROR_INVALID_PARAMETER;
-    memset(msg, 0, sizeof(telebot_message_t));
+    // NOTE(erick): Unnecessary
+    // memset(msg, 0, sizeof(telebot_message_t));
 
     struct json_object *message_id;
     if (!json_object_object_get_ex(obj, "message_id", &message_id)) {
@@ -931,4 +1058,3 @@ telebot_error_e telebot_parser_get_file_path(struct json_object *obj,
 
     return TELEBOT_ERROR_NONE;
 }
-

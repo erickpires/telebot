@@ -65,6 +65,7 @@ typedef struct telebot_user {
  */
 typedef struct telebot_chat {
     /** Unique identifier for this chat, not exceeding 1e13 by absolute value */
+    // NOTE(erick): Should we use an int64 here?
     int id;
 
     /** Type of chat, can be either "private", or "group", or "channel" */
@@ -292,6 +293,7 @@ typedef struct telebot_message {
     struct telebot_message  *reply_to_message;
 
     /** Optional. For text messages, the actual UTF-8 text of the message */
+    // TODO(erick): A message length should not be hardcoded.
     char text[TELEBOT_MESSAGE_TEXT_SIZE];
 
     /** Optional. Message is an audio file, information about the file */
@@ -365,6 +367,31 @@ typedef struct telebot_message {
 
 } telebot_message_t;
 
+typedef struct telebot_callback_query {
+    char *id;
+    telebot_user_t from;
+    telebot_message_t message;
+    char *inline_message_id;
+    char *chat_instance;
+    char *data;
+    char *game_short_name;
+} telebot_callback_query_t;
+
+typedef enum telebot_update_type {
+    // TODO(erick): We didn't implemented the following types:
+    /*
+     * edited_message
+     * channel_post
+     * edited_channel_post
+     * inline_query
+     * chosen_inline_result
+     * shipping_query
+     * pre_checkout_query
+    */
+    UPDATE_TYPE_MESSAGE,
+    UPDATE_TYPE_CALLBACK_QUERY,
+}telebot_update_type_t;
+
 /**
  * @brief This object represents an incoming update.
  */
@@ -375,8 +402,17 @@ typedef struct telebot_update {
      */
     int update_id;
 
-    /** New incoming message of any kind — text, photo, sticker, etc. */
-    telebot_message_t message;
+    /**
+     * The type of the update.
+     */
+    telebot_update_type_t update_type;
+
+    union {
+        /** New incoming message of any kind — text, photo, sticker, etc. */
+        telebot_message_t message;
+
+        telebot_callback_query_t callback_query;
+    };
 } telebot_update_t;
 
 
@@ -404,7 +440,7 @@ typedef struct {
 /**
  * @brief This function type defines callback for receiving updates.
  */
-typedef void (*telebot_update_cb_f)(const telebot_message_t *message);
+typedef void (*telebot_update_cb_f)(const telebot_update_t *update);
 
 /**
  * @brief Initial function to use telebot APIs.
@@ -498,7 +534,7 @@ telebot_error_e telebot_download_file(char *file_id, char *path);
  * reply keyboard, instructions to hide keyboard or to force a reply from the user.
  * @return on Success, TELEBOT_ERROR_NONE is returned.
  */
-telebot_error_e telebot_send_message(char *chat_id, char *text, char *parse_mode,
+telebot_error_e telebot_send_message(int chat_id, char *text, char *parse_mode,
         bool disable_web_page_preview, int reply_to_message_id, const char *reply_markup);
 
 /**
