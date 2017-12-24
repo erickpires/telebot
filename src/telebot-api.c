@@ -364,19 +364,18 @@ telebot_error_e telebot_download_file(char *file_id, char *path)
     return ret;
 }
 
-telebot_error_e telebot_send_message(char *chat_id, char *text, char *parse_mode,
+telebot_error_e telebot_send_message(int chat_id, char *text, char *parse_mode,
         bool disable_web_page_preview, int reply_to_message_id, const char *reply_markup)
 {
     if (g_handler == NULL)
         return TELEBOT_ERROR_NOT_SUPPORTED;
 
-    if (chat_id == NULL)
-        return TELEBOT_ERROR_INVALID_PARAMETER;
-
     if (text == NULL)
         return TELEBOT_ERROR_INVALID_PARAMETER;
 
-    telebot_error_e ret = telebot_core_send_message(g_handler, chat_id, text,
+    char chat_id_str[32];
+    sprintf(chat_id_str, "%d", chat_id);
+    telebot_error_e ret = telebot_core_send_message(g_handler, chat_id_str, text,
             parse_mode, disable_web_page_preview, reply_to_message_id,
             reply_markup);
 
