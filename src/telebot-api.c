@@ -32,10 +32,54 @@
 #include <telebot-parser.h>
 #include <assert.h>
 
+
+// TODO(erick): Since theses values are not thread local we can't
+// spawn more than one thread to handle updates.
 static telebot_update_cb_f g_update_cb;
 static telebot_core_h *g_handler;
 static bool g_run_telebot;
 static void *telebot_polling_thread(void *data);
+
+// TODO(erick): All occurencies of ids should match the API types.
+
+telebot_linear_allocator_t telebot_linear_allocator_create(size_t total_capacity)
+{
+    telebot_linear_allocator_t result;
+    result.data_ptr = malloc(total_capacity);
+    assert(result.data_ptr);
+
+    result.current_offset = 0;
+    result.capacity = total_capacity;
+
+    return result;
+}
+
+void telebot_linear_allocator_zero_all(telebot_linear_allocator_t *allocator)
+{
+    memset(allocator->data_ptr, 0, allocator->capacity);
+}
+
+void telebot_linear_allocator_free_all(telebot_linear_allocator_t *allocator)
+{
+    allocator->current_offset = 0;
+}
+
+// TODO(erick): We probably want to use mmap for this.
+void *telebot_linear_allocator_alloc(telebot_linear_allocator_t *allocator, size_t size)
+{
+    if(allocator->current_offset + size >= allocator->capacity) {
+        return NULL;
+    }
+
+    void* result = allocator->data_ptr + allocator->current_offset;
+    allocator->current_offset += size;
+    return result;
+}
+
+void telebot_linear_allocator_destroy(telebot_linear_allocator_t *allocator)
+{
+    free(allocator->data_ptr);
+}
 
 telebot_error_e telebot_create(char *token)
 {

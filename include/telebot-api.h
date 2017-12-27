@@ -145,6 +145,12 @@ extern "C" {
   * getGameHighScores
 */
 
+typedef struct telebot_linear_allocator {
+    void* data_ptr;
+    size_t current_offset;
+    size_t capacity;
+} telebot_linear_allocator_t;
+
 /**
  * @brief This object represents a Telegram user or bot.
  */
