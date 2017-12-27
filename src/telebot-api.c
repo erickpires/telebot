@@ -39,6 +39,7 @@ static telebot_update_cb_f g_update_cb;
 static telebot_core_h *g_handler;
 static bool g_run_telebot;
 static void *telebot_polling_thread(void *data);
+static telebot_linear_allocator_t update_allocator;
 
 // TODO(erick): All occurencies of ids should match the API types.
 
@@ -145,6 +146,8 @@ telebot_error_e telebot_start(telebot_update_cb_f update_cb,
     g_update_cb = update_cb;
     g_run_telebot = true;
 
+    update_allocator = telebot_linear_allocator_create(512 * 1024 * 1024); // 500MB
+
     ret = pthread_create(thread_id, &attr, telebot_polling_thread, NULL);
     if (ret != 0) {
         ERR("Failed to create thread, error: %d", errno);
@@ -161,6 +164,8 @@ telebot_error_e telebot_stop()
     g_run_telebot = false;
     g_update_cb = NULL;
 
+    telebot_linear_allocator_destroy(&update_allocator);
+
     return TELEBOT_ERROR_NONE;
 }
 
@@ -172,6 +177,8 @@ static void *telebot_polling_thread(void *data)
     while (g_run_telebot) {
         int count;
         telebot_update_t *updates;
+        telebot_linear_allocator_zero_all(&update_allocator);
+
         ret = telebot_get_updates(&updates, &count);
         if (ret != TELEBOT_ERROR_NONE)
             continue;
@@ -181,8 +188,7 @@ static void *telebot_polling_thread(void *data)
 
         }
 
-        free(updates);
-        updates = NULL;
+        telebot_linear_allocator_free_all(&update_allocator);
 
         usleep(TELEBOT_UPDATE_POLLING_INTERVAL);
     }
@@ -300,7 +306,7 @@ telebot_error_e telebot_get_updates(telebot_update_t **updates, int *count)
         return TELEBOT_ERROR_OPERATION_FAILED;
     }
 
-    ret = telebot_parser_get_updates(result, updates, count);
+    ret = telebot_parser_get_updates(result, updates, count, &update_allocator);
     json_object_put(result);
     json_object_put(obj);
 

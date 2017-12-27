@@ -551,6 +551,8 @@ typedef struct {
  */
 typedef void (*telebot_update_cb_f)(const telebot_update_t *update);
 
+void *telebot_linear_allocator_alloc(telebot_linear_allocator_t *allocator, size_t size);
+
 /**
  * @brief Initial function to use telebot APIs.
  *
