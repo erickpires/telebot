@@ -43,6 +43,108 @@ extern "C" {
  * @{
  */
 
+/*
+ TODO(erick): The following types are not implemented yet.
+ * MessageEntity
+ * VideoNote
+ * Venue
+ * ForceReply (should be just a function)
+ * ChatPhoto
+ * ChatMember
+ * ResponseParameters
+ * InputMedia
+   * InputMediaPhoto
+   * InputMediaVideo
+ * InputFile (?)
+ * StickerSet
+ * MaskPosition
+ * InlineQuery
+ * InlineQueryResult
+   * InlineQueryResultCachedAudio
+   * InlineQueryResultCachedDocument
+   * InlineQueryResultCachedGif
+   * InlineQueryResultCachedMpeg4Gif
+   * InlineQueryResultCachedPhoto
+   * InlineQueryResultCachedSticker
+   * InlineQueryResultCachedVideo
+   * InlineQueryResultCachedVoice
+   * InlineQueryResultArticle
+   * InlineQueryResultAudio
+   * InlineQueryResultContact
+   * InlineQueryResultGame
+   * InlineQueryResultDocument
+   * InlineQueryResultGif
+   * InlineQueryResultLocation
+   * InlineQueryResultMpeg4Gif
+   * InlineQueryResultPhoto
+   * InlineQueryResultVenue
+   * InlineQueryResultVideo
+   * InlineQueryResultVoice
+ * InputMessageContent
+   * InputTextMessageContent
+   * InputLocationMessageContent
+   * InputVenueMessageContent
+   * InputContactMessageContent
+ * ChosenInlineResult
+ * LabeledPrice
+ * Invoice
+ * ShippingAddress
+ * OrderInfo
+ * ShippingOption
+ * SuccessfulPayment
+ * ShippingQuery
+ * PreCheckoutQuery
+ * Game
+ * Animation
+ * CallbackGame (?)
+ * GameHighScore
+*/
+
+/*
+  TODO(erick): The following methods are not implemented yet.
+  * sendVideoNote
+  * sendMediaGroup
+  * editMessageLiveLocation
+  * stopMessageLiveLocation
+  * sendVenue
+  * sendContact
+  * getFile
+  * kickChatMember
+  * unbanChatMember
+  * restrictChatMember
+  * promoteChatMember
+  * exportChatInviteLink
+  * setChatPhoto
+  * deleteChatPhoto
+  * setChatTitle
+  * setChatDescription
+  * pinChatMessage
+  * unpinChatMessage
+  * leaveChat
+  * getChat
+  * getChatAdministrators
+  * getChatMembersCount
+  * getChatMember
+  * setChatStickerSet
+  * deleteChatStickerSet
+  * editMessageText
+  * editMessageCaption
+  * editMessageReplyMarkup
+  * getStickerSet
+  * uploadStickerFile
+  * createNewStickerSet
+  * addStickerToSet
+  * setStickerPositionInSet
+  * deleteStickerFromSet
+  * answerInlineQuery
+  * sendInvoice
+  * answerShippingQuery
+  * answerPreCheckoutQuery
+  * sendGame
+  * setGameScore
+  * getGameHighScores
+*/
+
 /**
  * @brief This object represents a Telegram user or bot.
  */
@@ -150,6 +252,7 @@ typedef struct telebot_document {
 /**
  * @brief This object represents a sticker.
  */
+// TODO(erick): This type needs to be revised.
 typedef struct telebot_sticker {
     /** Unique identifier for this file */
     char file_id[TELEBOT_FILE_ID_SIZE];
