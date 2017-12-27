@@ -198,13 +198,8 @@ static void *telebot_polling_thread(void *data)
     return NULL;
 }
 
-telebot_error_e telebot_get_me(telebot_user_t **me)
+telebot_error_e telebot_get_me(telebot_user_t *me)
 {
-    if (me == NULL)
-        return TELEBOT_ERROR_INVALID_PARAMETER;
-
-    *me = NULL;
-
     if (g_handler == NULL)
         return TELEBOT_ERROR_NOT_SUPPORTED;
 
@@ -239,24 +234,14 @@ telebot_error_e telebot_get_me(telebot_user_t **me)
         return TELEBOT_ERROR_OPERATION_FAILED;
     }
 
-    telebot_user_t *tmp = (telebot_user_t*)malloc(sizeof(telebot_user_t));
-    if (tmp == NULL) {
-        json_object_put(result);
-        json_object_put(obj);
-        return TELEBOT_ERROR_OUT_OF_MEMORY;
-    }
-
     // TODO(erick): getMe should not be using the update allocator.
-    ret = telebot_parser_get_user(result, tmp, &update_allocator);
+    ret = telebot_parser_get_user(result, me, &update_allocator);
     json_object_put(result);
     json_object_put(obj);
 
     if (ret != TELEBOT_ERROR_NONE) {
-        free(tmp);
         return TELEBOT_ERROR_OPERATION_FAILED;
     }
-
-    *me = tmp;
 
     return TELEBOT_ERROR_NONE;
 }

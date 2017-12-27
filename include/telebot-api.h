@@ -606,7 +606,7 @@ telebot_error_e telebot_stop();
  * @return On success, TELEBOT_ERROR_NONE is returned, and user object is
  * stored in input parameter.
  */
-telebot_error_e telebot_get_me(telebot_user_t **me);
+telebot_error_e telebot_get_me(telebot_user_t *me);
 
 /**
  * @brief This function is used to get latest updates. It is alternative for
