@@ -96,6 +96,8 @@ telebot_error_e telebot_create(char *token)
         return ret;
     }
 
+    update_allocator = telebot_linear_allocator_create(512 * 1024 * 1024); // 500MB
+
     return TELEBOT_ERROR_NONE;
 }
 
@@ -109,6 +111,8 @@ telebot_error_e telebot_destroy()
         free(g_handler);
 
     g_handler = NULL;
+
+    telebot_linear_allocator_destroy(&update_allocator);
 
     return TELEBOT_ERROR_NONE;
 }
@@ -146,8 +150,6 @@ telebot_error_e telebot_start(telebot_update_cb_f update_cb,
     g_update_cb = update_cb;
     g_run_telebot = true;
 
-    update_allocator = telebot_linear_allocator_create(512 * 1024 * 1024); // 500MB
-
     ret = pthread_create(thread_id, &attr, telebot_polling_thread, NULL);
     if (ret != 0) {
         ERR("Failed to create thread, error: %d", errno);
@@ -163,8 +165,6 @@ telebot_error_e telebot_stop()
 {
     g_run_telebot = false;
     g_update_cb = NULL;
-
-    telebot_linear_allocator_destroy(&update_allocator);
 
     return TELEBOT_ERROR_NONE;
 }
@@ -246,7 +246,8 @@ telebot_error_e telebot_get_me(telebot_user_t **me)
         return TELEBOT_ERROR_OUT_OF_MEMORY;
     }
 
-    ret = telebot_parser_get_user(result, tmp);
+    // TODO(erick): getMe should not be using the update allocator.
+    ret = telebot_parser_get_user(result, tmp, &update_allocator);
     json_object_put(result);
     json_object_put(obj);
 

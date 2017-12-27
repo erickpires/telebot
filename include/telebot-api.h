@@ -158,14 +158,20 @@ typedef struct telebot_user {
     /** Unique identifier for this user or bot */
     int id;
 
+    /** True, if this user is a bot */
+    bool is_bot;
+
     /** User's or bot's first name. */
-    char first_name[TELEBOT_FIRST_NAME_SIZE];
+    char* first_name;
 
     /** Optional. User's or bot's last name */
-    char last_name[TELEBOT_LAST_NAME_SIZE];
+    char* last_name;
 
-    /** Optional. User's or bot's username. */
-    char username[TELEBOT_USER_NAME_SIZE];
+    /** Optional. User's or bot's username */
+    char* username;
+
+    /** Optional. IETF language tag of the user's language */
+    char* language_code;
 } telebot_user_t;
 
 /**

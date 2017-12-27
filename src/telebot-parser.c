@@ -68,7 +68,8 @@ telebot_error_e telebot_parser_get_updates(struct json_object *obj,
 
         struct json_object *message;
         if (json_object_object_get_ex(item, "message", &message)) {
-            if (telebot_parser_get_message(message, &(result[index].message)) !=
+            if (telebot_parser_get_message(message, &(result[index].message),
+                                           allocator) !=
                     TELEBOT_ERROR_NONE)
                 ERR("Failed to parse message of bot update");
 
@@ -125,7 +126,7 @@ telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
         ERR("Failed to get <from> from callback_query object");
         return TELEBOT_ERROR_OPERATION_FAILED;
     }
-    ret = telebot_parser_get_user(from , &(cb_query->from));
+    ret = telebot_parser_get_user(from , &(cb_query->from), allocator);
     json_object_put(from);
 
     if (ret != TELEBOT_ERROR_NONE) {
@@ -136,7 +137,7 @@ telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
 
     struct json_object *message;
     if (json_object_object_get_ex(obj, "message", &message)) {
-        ret = telebot_parser_get_message(message, &(cb_query->message));
+        ret = telebot_parser_get_message(message, &(cb_query->message), allocator);
         if (ret != TELEBOT_ERROR_NONE) {
             ERR("Failed to get <message> from callback_query object");
         }
@@ -200,7 +201,8 @@ telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
 }
 
 telebot_error_e telebot_parser_get_message(struct json_object *obj,
-                                           telebot_message_t *msg)
+                                           telebot_message_t *msg,
+                                           telebot_linear_allocator_t *allocator)
 {
     if (obj == NULL)
         return TELEBOT_ERROR_INVALID_PARAMETER;
@@ -219,7 +221,7 @@ telebot_error_e telebot_parser_get_message(struct json_object *obj,
     int ret;
     struct json_object *from;
     if (json_object_object_get_ex(obj, "from", &from)) {
-        ret = telebot_parser_get_user(from , &(msg->from));
+        ret = telebot_parser_get_user(from , &(msg->from), allocator);
         if (ret != TELEBOT_ERROR_NONE)
             ERR("Failed to get <from user> from message object");
         json_object_put(from);
@@ -241,7 +243,7 @@ telebot_error_e telebot_parser_get_message(struct json_object *obj,
 
     struct json_object *forward_from;
     if (json_object_object_get_ex(obj, "forward_from", &forward_from)) {
-        ret = telebot_parser_get_user(forward_from , &(msg->forward_from));
+        ret = telebot_parser_get_user(forward_from , &(msg->forward_from), allocator);
         if (ret != TELEBOT_ERROR_NONE)
             ERR("Failed to get <forward from> from message object");
         json_object_put(forward_from);
@@ -338,7 +340,7 @@ telebot_error_e telebot_parser_get_message(struct json_object *obj,
 
     struct json_object *ncp;
     if (json_object_object_get_ex(obj, "new_chat_participant", &ncp)) {
-        ret = telebot_parser_get_user(ncp , &(msg->new_chat_participant));
+        ret = telebot_parser_get_user(ncp , &(msg->new_chat_participant), allocator);
         if (ret != TELEBOT_ERROR_NONE)
             ERR("Failed to get <new_chat_participant> from message object");
         json_object_put(ncp);
@@ -346,7 +348,7 @@ telebot_error_e telebot_parser_get_message(struct json_object *obj,
 
     struct json_object *lcp;
     if (json_object_object_get_ex(obj, "left_chat_participant", &lcp)) {
-        ret = telebot_parser_get_user(lcp , &(msg->left_chat_participant));
+        ret = telebot_parser_get_user(lcp , &(msg->left_chat_participant), allocator);
         if (ret != TELEBOT_ERROR_NONE)
             ERR("Failed to get <left_chat_participant> from message object");
         json_object_put(lcp);
@@ -408,13 +410,16 @@ telebot_error_e telebot_parser_get_message(struct json_object *obj,
 }
 
 telebot_error_e telebot_parser_get_user(struct json_object *obj,
-        telebot_user_t *user)
+                                        telebot_user_t *user,
+                                        telebot_linear_allocator_t *allocator)
 {
     if (obj == NULL)
         return TELEBOT_ERROR_INVALID_PARAMETER;
 
     if (user == NULL)
         return TELEBOT_ERROR_INVALID_PARAMETER;
+
+    // NOTE(erick): Probably unnecessary.
     memset(user, 0, sizeof(telebot_user_t));
 
     struct json_object *id;
@@ -430,24 +435,55 @@ telebot_error_e telebot_parser_get_user(struct json_object *obj,
         ERR("Object is not user type, first_name not found");
         return TELEBOT_ERROR_OPERATION_FAILED;
     }
-    snprintf(user->first_name, TELEBOT_FIRST_NAME_SIZE, "%s",
-            json_object_get_string(first_name));
+
+    int first_name_len = json_object_get_string_len(first_name);
+    user->first_name = telebot_linear_allocator_alloc(allocator, first_name_len + 1);
+    if(!user->first_name) { return TELEBOT_ERROR_OUT_OF_MEMORY; }
+
+    strncpy(user->first_name, json_object_get_string(first_name), first_name_len);
     json_object_put(first_name);
+
+
+    struct json_object *is_bot;
+    if (!json_object_object_get_ex(obj, "is_bot", &is_bot)) {
+        ERR("Object is not user type, is_bot not found");
+        return TELEBOT_ERROR_OPERATION_FAILED;
+    }
+
+    user->is_bot = json_object_get_boolean(is_bot);
+    json_object_put(is_bot);
 
     struct json_object *last_name;
     if (json_object_object_get_ex(obj, "last_name", &last_name)) {
-        snprintf(user->last_name, TELEBOT_LAST_NAME_SIZE, "%s",
-                json_object_get_string(last_name));
+        int last_name_len = json_object_get_string_len(last_name);
+        user->last_name = telebot_linear_allocator_alloc(allocator, last_name_len + 1);
+        if(!user->last_name) { return TELEBOT_ERROR_OUT_OF_MEMORY; }
+
+        strncpy(user->last_name, json_object_get_string(last_name), last_name_len);
         json_object_put(last_name);
     }
 
     struct json_object *username;
     if (json_object_object_get_ex(obj, "username", &username)) {
-        snprintf(user->username, TELEBOT_USER_NAME_SIZE, "%s",
-                json_object_get_string(username));
+        int username_len = json_object_get_string_len(username);
+        user->username = telebot_linear_allocator_alloc(allocator, username_len + 1);
+        if(!user->username) { return TELEBOT_ERROR_OUT_OF_MEMORY; }
+
+        strncpy(user->username, json_object_get_string(username), username_len);
         json_object_put(username);
     }
 
+    struct json_object *language_code;
+    if (json_object_object_get_ex(obj, "language_code", &language_code)) {
+        int language_code_len = json_object_get_string_len(language_code);
+        user->language_code =
+            telebot_linear_allocator_alloc(allocator, language_code_len + 1);
+        if(!user->language_code) { return TELEBOT_ERROR_OUT_OF_MEMORY; }
+
+        strncpy(user->language_code, json_object_get_string(language_code),
+                language_code_len);
+        json_object_put(language_code);
+    }
     return TELEBOT_ERROR_NONE;
 }
 

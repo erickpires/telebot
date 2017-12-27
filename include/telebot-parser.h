@@ -28,7 +28,8 @@ telebot_error_e telebot_parser_get_updates(struct json_object *obj,
 
 /** Parse message object */
 telebot_error_e telebot_parser_get_message(struct json_object *obj,
-        telebot_message_t *msg);
+                                           telebot_message_t *msg,
+                                           telebot_linear_allocator_t *allocator);
 
 /** Parse callback_query object */
 telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
@@ -36,8 +37,8 @@ telebot_error_e telebot_parser_get_callback_query(struct json_object *obj,
                                                   telebot_linear_allocator_t *allocator);
 /** Parse user object */
 telebot_error_e telebot_parser_get_user(struct json_object *obj,
-        telebot_user_t *user);
-
+                                        telebot_user_t *user,
+                                        telebot_linear_allocator_t *allocator);
 /** Prase chat object */
 telebot_error_e telebot_parser_get_chat(struct json_object *obj,
         telebot_chat_t *chat);
